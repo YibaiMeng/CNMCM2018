@@ -113,7 +113,9 @@ class Simulator:
         if cnc.possible_run == RUN2 and self.rgv.has != HALF_FINISHED: cnc.status = IDLE  # if not has a HALF_FINISHED, just get the FINISHED one
         else: cnc.status = cnc.possible_run  # change the state to run
         deltaT = self.parameter.rgv[(idx-1) % 2]
-        if self.verbose: print("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED", gotstr))
+        feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
+        if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
+        if self.verbose: print("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
         self.rgv.has = got
         self.time += deltaT
         cnc.start = self.time
