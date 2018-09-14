@@ -4,13 +4,18 @@ choose what to do
 from simulator import *
 
 def main():
-    print(choose1(Parameter1))
+    cnt = 0
+    for i in range(20):
+        s = choose1(Parameter1)
+        print (s)
+        cnt += s.count
+    print("The average count is ",cnt / 20)
 
 def choose1(parameter):
 
     MAX_TIME = 28801
 
-    s = Simulator(parameter,verbose=True)
+    s = Simulator(parameter,verbose=False,err_rate=0.01)
 
     while s.time < 28800 :
         pos = s.rgv.position
@@ -24,13 +29,19 @@ def choose1(parameter):
             continue
         'if the cnc beside the rgv is IDLE, feed it'
 
-        if s.Cnc(cncNo).finish_time() <= s.time and s.time + parameter.rgv[0] + parameter.clean < MAX_TIME:
+        if s.Cnc(cncNo).finish_time() <= s.time and s.time + parameter.rgv[0] < MAX_TIME:
             s.feed(cncNo)
-            s.clean()
+            if s.rgv.has == FINISHED:
+                if s.time + parameter.clean < MAX_TIME:
+                    s.clean()
+                else : break
             continue
-        if s.Cnc(cncNo+1).finish_time() <= s.time and s.time + parameter.rgv[1] + parameter.clean < MAX_TIME:
+        if s.Cnc(cncNo+1).finish_time() <= s.time and s.time + parameter.rgv[1] < MAX_TIME:
             s.feed(cncNo+1)
-            s.clean()
+            if s.rgv.has == FINISHED:
+                if s.time + parameter.clean < MAX_TIME:
+                    s.clean()
+                else : break
             continue
         'if the cnc beside the rgv is done, feed it and clean'
 
