@@ -148,7 +148,7 @@ class Simulator:
         s += "finished %d objects\n" % self.count
         return s
     
-    def cnc(self, idx):
+    def Cnc(self, idx):
         return self.cnc[idx-1]
 
 if __name__ == '__main__':
