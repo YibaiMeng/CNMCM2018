@@ -39,7 +39,7 @@ class Parameter2:
     rgv = [30, 35]
     clean = 30
 
-class Parameter2:
+class Parameter3:
     mov = [0, 18, 32, 46]
     run = [545, 455, 182]
     rgv = [27, 32]
