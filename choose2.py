@@ -26,13 +26,13 @@ def main():
                                     Run1.append(6) if i6 == 1 else Run2.append(6)
                                     Run1.append(7) if i7 == 1 else Run2.append(7)
                                     Run1.append(8) if i8 == 1 else Run2.append(8)
-                                    s = choose2(Parameter1,Run1,Run2)
+                                    s = choose2(Parameter3,Run1,Run2)
                                     if s.count > max_count:
                                         max_count = s.count
                                         max_run1 = Run1
                                         max_run2 = Run2
     print(max_run1,max_run2)
-    print(choose2(Parameter1,max_run1,max_run2))
+    print(choose2(Parameter3,max_run1,max_run2))
 
 
 def choose2(parameter,Run1,Run2):

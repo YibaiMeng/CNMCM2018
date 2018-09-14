@@ -2,7 +2,7 @@
 simulate the behavior of every CNC and RGV
 providing API with whether an action satisfy the constrains
 """
-import copy, os, time
+import copy, os, time, random
 
 def main():
     if False:
@@ -15,8 +15,8 @@ def main():
         s.feed(8)
         s.clean()
         print(s)
-
-    if True:
+    
+    if False:
         print("demo for question 2")
         s = Simulator(Parameter1, run1=[1,2,3], run2=[4,5,6,7,8], verbose=True)
         a = s.copy()
@@ -33,14 +33,16 @@ def main():
         print(s.log)
         print(a)
         s.save("tmp_ques2.txt")
-
-'''
-<<<<<<< HEAD
-
-=======
+    
+    if True:
+        print("demo for question 3")
+        s = Simulator(Parameter1, verbose=True, err_rate=0.5)
+        for i in range(20):
+            s.feed(1)
+            if s.rgv.has != NOTHING: s.clean()
+            s.wait(2000)
+        print(s)
         
->>>>>>> aa15f8a4eeb9d6123a749e9b0663e242374f8f1d
-'''
 
 
 
@@ -80,12 +82,14 @@ class CNC:
         self.start = -1
         self.parameter = parameter
         self.possible_run = possible_run
-
+        self.broketime = 0  # random broken time
+    
     def finish_time(self):
         if self.status == IDLE: return -1
         if self.status == RUN: return self.start + self.parameter.run[0]
         if self.status == RUN1: return self.start + self.parameter.run[1]
         if self.status == RUN2: return self.start + self.parameter.run[2]
+        if self.status == BROKEN: return self.start + self.broketime
         else: raise Exception("not implemented")
 
 class RGV:
@@ -115,13 +119,13 @@ class Simulator:
         self.log.append("%d+%d: rgv move from %d to %d" % (self.time, deltaT, lastpos, position))
         if self.verbose: print(self.log[-1])
         self.time += deltaT  # check by default, if out of range, raise exception
-
+    
     def feed(self, idx):
         pos = (idx-1) // 2
         if self.rgv.position != pos: raise Exception("not in this position")
         cnc = self.cnc[idx-1]
         if cnc.finish_time() > self.time : raise Exception("work not finished")
-        got = NOTHING if cnc.status == IDLE else (HALF_FINISHED if cnc.status == RUN1 else FINISHED)
+        got = NOTHING if (cnc.status == IDLE or cnc.status == BROKEN) else (HALF_FINISHED if cnc.status == RUN1 else FINISHED)
         gotstr = {NOTHING: "NOTHING", FINISHED: "FINISHED", HALF_FINISHED: "HALF_FINISHED"}[got]
         if self.rgv.has != NOTHING and not (self.rgv.has == HALF_FINISHED and cnc.possible_run == RUN2): raise Exception("rgv has something to clean or cannot do it")
         if cnc.possible_run == RUN2 and self.rgv.has != HALF_FINISHED: cnc.status = IDLE  # if not has a HALF_FINISHED, just get the FINISHED one
@@ -130,11 +134,15 @@ class Simulator:
         feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
         self.log.append("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
+        if random.random() < self.err_rate:
+            cnc.status = BROKEN
+            cnc.broketime = random.randint(600, 1201)  # from 10min to 20min
+            self.log[-1] += ", but then broke :("
         if self.verbose: print(self.log[-1])
         self.rgv.has = got
         self.time += deltaT
         cnc.start = self.time
-
+    
     def clean(self):
         if self.rgv.has != FINISHED: raise Exception("nothing to clean or half-finished cannot be cleaned")
         deltaT = self.parameter.clean
@@ -143,7 +151,7 @@ class Simulator:
         self.rgv.has = NOTHING
         self.time += deltaT
         self.count += 1
-
+    
     def wait(self, deltaT):
         self.log.append("%d+%d: waiting" % (self.time, deltaT))
         if self.verbose: print(self.log[-1])
@@ -157,6 +165,7 @@ class Simulator:
             elif self.cnc[idx-1].status == RUN: st = "r "
             elif self.cnc[idx-1].status == RUN1: st = "1 "
             elif self.cnc[idx-1].status == RUN2: st = "2 "
+            elif self.cnc[idx-1].status == BROKEN: st = "x "
             else: raise Exception("status unknown")
             return st
         for idx in [2, 4, 6, 8]: s += addstatus(idx)  # upper CNCs
@@ -166,25 +175,13 @@ class Simulator:
         s += "\n"
         s += "finished %d objects\n" % self.count
         return s
-
+    
     def Cnc(self, idx):
         return self.cnc[idx-1]
     
     def copy(self):
         return copy.deepcopy(self)
     
-    def save(self, filename="tmp.txt", folder="Data"):  # save current state to a file, with verbose log behind
-        with open(os.path.join(folder, filename), 'w') as f:
-            f.write("trace for simulation at %s\n" % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
-            f.write("\n[now state]\n")
-            f.write(str(self))
-            f.write("\n[log]\n")
-            for s in self.log:
-                f.write(s + '\n')
-
-    def copy(self):
-        return copy.deepcopy(self)
-
     def save(self, filename="tmp.txt", folder="Data"):  # save current state to a file, with verbose log behind
         with open(os.path.join(folder, filename), 'w') as f:
             f.write("trace for simulation at %s\n" % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
