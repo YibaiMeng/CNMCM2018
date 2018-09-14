@@ -2,6 +2,7 @@
 simulate the behavior of every CNC and RGV
 providing API with whether an action satisfy the constrains
 """
+import copy, os, time
 
 def main():
     if False:
@@ -18,6 +19,7 @@ def main():
     if True:
         print("demo for question 2")
         s = Simulator(Parameter1, run1=[1,2,3], run2=[4,5,6,7,8], verbose=True)
+        a = s.copy()
         s.move2(1)
         s.feed(3)
         s.wait(1000)
@@ -28,6 +30,9 @@ def main():
         s.feed(4)
         s.clean()
         print(s)
+        print(s.log)
+        print(a)
+        s.save("tmp_ques2.txt")
         
 
 
@@ -93,13 +98,15 @@ class Simulator:
         self.err_rate = err_rate
         self.verbose = verbose
         self.count = 0
+        self.log = []  # record the verbose output
 
     def move2(self, position):  # position in [0,1,2,3]
         lastpos = self.rgv.position
         distance = abs(lastpos - position)
         deltaT = self.parameter.mov[distance]
         self.rgv.position = position
-        if self.verbose: print("%d+%d: rgv move from %d to %d" % (self.time, deltaT, lastpos, position))
+        self.log.append("%d+%d: rgv move from %d to %d" % (self.time, deltaT, lastpos, position))
+        if self.verbose: print(self.log[-1])
         self.time += deltaT  # check by default, if out of range, raise exception
     
     def feed(self, idx):
@@ -115,7 +122,8 @@ class Simulator:
         deltaT = self.parameter.rgv[(idx-1) % 2]
         feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
-        if self.verbose: print("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
+        self.log.append("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
+        if self.verbose: print(self.log[-1])
         self.rgv.has = got
         self.time += deltaT
         cnc.start = self.time
@@ -123,13 +131,15 @@ class Simulator:
     def clean(self):
         if self.rgv.has != FINISHED: raise Exception("nothing to clean or half-finished cannot be cleaned")
         deltaT = self.parameter.clean
-        if self.verbose: print("%d+%d: clean finised work" % (self.time, deltaT))
+        self.log.append("%d+%d: clean finised work" % (self.time, deltaT))
+        if self.verbose: print(self.log[-1])
         self.rgv.has = NOTHING
         self.time += deltaT
         self.count += 1
     
     def wait(self, deltaT):
-        if self.verbose: print("%d+%d: waiting" % (self.time, deltaT))
+        self.log.append("%d+%d: waiting" % (self.time, deltaT))
+        if self.verbose: print(self.log[-1])
         self.time += deltaT
 
     def __str__(self):
@@ -152,6 +162,18 @@ class Simulator:
     
     def Cnc(self, idx):
         return self.cnc[idx-1]
+    
+    def copy(self):
+        return copy.deepcopy(self)
+    
+    def save(self, filename="tmp.txt", folder="Data"):  # save current state to a file, with verbose log behind
+        with open(os.path.join(folder, filename), 'w') as f:
+            f.write("trace for simulation at %s\n" % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+            f.write("\n[now state]\n")
+            f.write(str(self))
+            f.write("\n[log]\n")
+            for s in self.log:
+                f.write(s + '\n')
 
 if __name__ == '__main__':
     main()
