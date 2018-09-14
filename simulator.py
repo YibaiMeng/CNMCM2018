@@ -27,6 +27,7 @@ def main():
         s.wait(1000)
         s.feed(4)
         s.clean()
+        print(s)
         
 
 
@@ -91,6 +92,7 @@ class Simulator:
         self.parameter = parameter
         self.err_rate = err_rate
         self.verbose = verbose
+        self.count = 0
 
     def move2(self, position):  # position in [0,1,2,3]
         lastpos = self.rgv.position
@@ -122,6 +124,7 @@ class Simulator:
         if self.verbose: print("%d+%d: clean finised work" % (self.time, deltaT))
         self.rgv.has = NOTHING
         self.time += deltaT
+        self.count += 1
     
     def wait(self, deltaT):
         if self.verbose: print("%d+%d: waiting" % (self.time, deltaT))
@@ -142,7 +145,11 @@ class Simulator:
         s += "".join(["  " for i in range(self.rgv.position)] + ["x\n"])
         for idx in [1, 3, 5, 7]: s += addstatus(idx)  # lower CNCs
         s += "\n"
+        s += "finished %d objects\n" % self.count
         return s
+    
+    def cnc(self, idx):
+        return self.cnc[idx-1]
 
 if __name__ == '__main__':
     main()
