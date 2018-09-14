@@ -26,20 +26,28 @@ def main():
                                     Run1.append(6) if i6 == 1 else Run2.append(6)
                                     Run1.append(7) if i7 == 1 else Run2.append(7)
                                     Run1.append(8) if i8 == 1 else Run2.append(8)
-                                    s = choose2(Parameter1,Run1,Run2)
-                                    if s.count > max_count:
-                                        max_count = s.count
+
+                                    cnt = 0
+                                    for i in range(20):
+                                        s = choose2(Parameter3,Run1,Run2)
+                                        cnt += s.count
+                                    cnt /= 20
+                                    if cnt > max_count:
+                                        max_count = cnt
                                         max_run1 = Run1
                                         max_run2 = Run2
-    print(max_run1,max_run2)
-    print(choose2(Parameter1,max_run1,max_run2))
+                                    print (Run1,Run2,cnt)
+
+    print(max_run1,max_run2,max_count)
+    print("demo")
+    print(choose2(Parameter3,max_run1,max_run2))
 
 
 def choose2(parameter,Run1,Run2):
 
     MAX_TIME = 28801
 
-    s = Simulator(parameter,Run1,Run2,verbose=False)
+    s = Simulator(parameter,Run1,Run2,verbose=False,err_rate=0.01)
 
     while s.time < 28800 :
         pos = s.rgv.position
