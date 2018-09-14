@@ -33,7 +33,11 @@ def main():
         print(s.log)
         print(a)
         s.save("tmp_ques2.txt")
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> aa15f8a4eeb9d6123a749e9b0663e242374f8f1d
 
 
 
@@ -162,6 +166,18 @@ class Simulator:
 
     def Cnc(self, idx):
         return self.cnc[idx-1]
+    
+    def copy(self):
+        return copy.deepcopy(self)
+    
+    def save(self, filename="tmp.txt", folder="Data"):  # save current state to a file, with verbose log behind
+        with open(os.path.join(folder, filename), 'w') as f:
+            f.write("trace for simulation at %s\n" % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+            f.write("\n[now state]\n")
+            f.write(str(self))
+            f.write("\n[log]\n")
+            for s in self.log:
+                f.write(s + '\n')
 
     def copy(self):
         return copy.deepcopy(self)

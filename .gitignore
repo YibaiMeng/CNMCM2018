@@ -3,3 +3,8 @@
 
 .pyc
 __pycache__/
+
+Paper/CNMCM2018.*
+!Paper/CNMCM2018.tex
+
+Data/tmp*
