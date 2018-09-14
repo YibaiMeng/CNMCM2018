@@ -26,13 +26,13 @@ def main():
                                     Run1.append(6) if i6 == 1 else Run2.append(6)
                                     Run1.append(7) if i7 == 1 else Run2.append(7)
                                     Run1.append(8) if i8 == 1 else Run2.append(8)
-                                    s = choose2(Parameter3,Run1,Run2)
+                                    s = choose2(Parameter1,Run1,Run2)
                                     if s.count > max_count:
                                         max_count = s.count
                                         max_run1 = Run1
                                         max_run2 = Run2
     print(max_run1,max_run2)
-    print(choose2(Parameter3,max_run1,max_run2))
+    print(choose2(Parameter1,max_run1,max_run2))
 
 
 def choose2(parameter,Run1,Run2):
@@ -62,13 +62,16 @@ def choose2(parameter,Run1,Run2):
                 min_time = time_list[i]
                 mini = i + 1
 
+        if min_time >= MAX_TIME: break
         target_pose = (mini - 1) // 2
 
         if target_pose != pos : s.move2(target_pose)
         'if s.time < min_time : s.time = min_time'
         if s.time < s.Cnc(mini).finish_time(): s.time = s.Cnc(mini).finish_time()
 
+
         if s.Cnc(mini).possible_run == RUN1 :
+            if s.time + parameter.rgv[(mini+1)%2] >= MAX_TIME : break
             s.feed(mini)
             if(s.rgv.has == HALF_FINISHED):
                 pos = s.rgv.position
@@ -87,16 +90,23 @@ def choose2(parameter,Run1,Run2):
                     if s.Cnc(i+1).possible_run == RUN2 and time_list2[i] < min_time2:
                         min_time2 = time_list2[i]
                         mini2 = i + 1
+                if min_time2 >= MAX_TIME: break
                 target_pose = (mini2 - 1) // 2
                 if target_pose != pos : s.move2(target_pose)
                 if s.time < s.Cnc(mini2).finish_time() : s.time = s.Cnc(mini2).finish_time()
 
+                if(s.time + parameter.rgv[(mini2+1)%2] >= MAX_TIME):break
                 s.feed(mini2)
-                if s.rgv.has == FINISHED : s.clean()
+                if s.rgv.has == FINISHED :
+                    if s.time + parameter.clean < MAX_TIME: s.clean()
+                    else : break
 
         elif s.Cnc(mini).possible_run == RUN2 :
+            if s.time + parameter.rgv[(mini+1)%2] >= MAX_TIME: break
             s.feed(mini)
-            if s.rgv.has == FINISHED : s.clean()
+            if s.rgv.has == FINISHED :
+                if s.time + parameter.clean < MAX_TIME: s.clean()
+                else : break
 
     return s
 

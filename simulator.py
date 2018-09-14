@@ -33,11 +33,14 @@ def main():
         print(s.log)
         print(a)
         s.save("tmp_ques2.txt")
+
+'''
 <<<<<<< HEAD
 
 =======
         
 >>>>>>> aa15f8a4eeb9d6123a749e9b0663e242374f8f1d
+'''
 
 
 
