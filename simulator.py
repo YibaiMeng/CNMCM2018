@@ -4,16 +4,32 @@ providing API with whether an action satisfy the constrains
 """
 
 def main():
-    s = Simulator(Parameter1, verbose=True)
-    s.move2(1)
-    s.move2(3)
-    s.feed(8)
-    s.wait(1000)
-    s.feed(8)
-    s.clean()
+    if False:
+        print("demo for question 1")
+        s = Simulator(Parameter1, verbose=True)
+        s.move2(1)
+        s.move2(3)
+        s.feed(8)
+        s.wait(1000)
+        s.feed(8)
+        s.clean()
+        print(s)
+    
+    if True:
+        print("demo for question 2")
+        s = Simulator(Parameter1, run1=[1,2,3], run2=[4,5,6,7,8], verbose=True)
+        s.move2(1)
+        s.feed(3)
+        s.wait(1000)
+        s.feed(3)
+        s.wait(1000)
+        s.feed(4)
+        s.wait(1000)
+        s.feed(4)
+        s.clean()
+        
 
 
-    print(s)
 
 # status of CNC
 IDLE = 0
@@ -89,10 +105,11 @@ class Simulator:
         if self.rgv.position != pos: raise Exception("not in this position")
         cnc = self.cnc[idx-1]
         if cnc.finish_time() > self.time : raise Exception("work not finished")
-        got = NOTHING if cnc.status == IDLE else (FINISHED if cnc.status != "RUN1" else HALF_FINISHED)
+        got = NOTHING if cnc.status == IDLE else (HALF_FINISHED if cnc.status == RUN1 else FINISHED)
         gotstr = {NOTHING: "NOTHING", FINISHED: "FINISHED", HALF_FINISHED: "HALF_FINISHED"}[got]
         if self.rgv.has != NOTHING and not (self.rgv.has == HALF_FINISHED and cnc.possible_run == RUN2): raise Exception("rgv has something to clean or cannot do it")
-        cnc.status = cnc.possible_run  # change the state to run
+        if cnc.possible_run == RUN2 and self.rgv.has != HALF_FINISHED: cnc.status = IDLE  # if not has a HALF_FINISHED, just get the FINISHED one
+        else: cnc.status = cnc.possible_run  # change the state to run
         deltaT = self.parameter.rgv[(idx-1) % 2]
         if self.verbose: print("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED", gotstr))
         self.rgv.has = got
