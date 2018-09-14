@@ -92,10 +92,10 @@ class Simulator:
         got = NOTHING if cnc.status == IDLE else (FINISHED if cnc.status != "RUN1" else HALF_FINISHED)
         gotstr = {NOTHING: "NOTHING", FINISHED: "FINISHED", HALF_FINISHED: "HALF_FINISHED"}[got]
         if self.rgv.has != NOTHING and not (self.rgv.has == HALF_FINISHED and cnc.possible_run == RUN2): raise Exception("rgv has something to clean or cannot do it")
-        self.rgv.has = got
         cnc.status = cnc.possible_run  # change the state to run
         deltaT = self.parameter.rgv[(idx-1) % 2]
         if self.verbose: print("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED", gotstr))
+        self.rgv.has = got
         self.time += deltaT
         cnc.start = self.time
     
