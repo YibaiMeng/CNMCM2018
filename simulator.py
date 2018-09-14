@@ -120,6 +120,7 @@ class Simulator:
         if self.rgv.has != FINISHED: raise Exception("nothing to clean or half-finished cannot be cleaned")
         deltaT = self.parameter.clean
         if self.verbose: print("%d+%d: clean finised work" % (self.time, deltaT))
+        self.rgv.has = NOTHING
         self.time += deltaT
     
     def wait(self, deltaT):
