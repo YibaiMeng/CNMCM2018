@@ -2,7 +2,7 @@
 simulate the behavior of every CNC and RGV
 providing API with whether an action satisfy the constrains
 """
-import copy, os, time
+import copy, os, time, random
 
 def main():
     if False:
@@ -16,7 +16,7 @@ def main():
         s.clean()
         print(s)
     
-    if True:
+    if False:
         print("demo for question 2")
         s = Simulator(Parameter1, run1=[1,2,3], run2=[4,5,6,7,8], verbose=True)
         a = s.copy()
@@ -33,6 +33,15 @@ def main():
         print(s.log)
         print(a)
         s.save("tmp_ques2.txt")
+    
+    if True:
+        print("demo for question 3")
+        s = Simulator(Parameter1, verbose=True, err_rate=0.5)
+        for i in range(20):
+            s.feed(1)
+            if s.rgv.has != NOTHING: s.clean()
+            s.wait(2000)
+        print(s)
         
 
 
@@ -73,12 +82,14 @@ class CNC:
         self.start = -1
         self.parameter = parameter
         self.possible_run = possible_run
+        self.broketime = 0  # random broken time
     
     def finish_time(self):
         if self.status == IDLE: return -1
         if self.status == RUN: return self.start + self.parameter.run[0]
         if self.status == RUN1: return self.start + self.parameter.run[1]
         if self.status == RUN2: return self.start + self.parameter.run[2]
+        if self.status == BROKEN: return self.start + self.broketime
         else: raise Exception("not implemented")
 
 class RGV:
@@ -114,7 +125,7 @@ class Simulator:
         if self.rgv.position != pos: raise Exception("not in this position")
         cnc = self.cnc[idx-1]
         if cnc.finish_time() > self.time : raise Exception("work not finished")
-        got = NOTHING if cnc.status == IDLE else (HALF_FINISHED if cnc.status == RUN1 else FINISHED)
+        got = NOTHING if (cnc.status == IDLE or cnc.status == BROKEN) else (HALF_FINISHED if cnc.status == RUN1 else FINISHED)
         gotstr = {NOTHING: "NOTHING", FINISHED: "FINISHED", HALF_FINISHED: "HALF_FINISHED"}[got]
         if self.rgv.has != NOTHING and not (self.rgv.has == HALF_FINISHED and cnc.possible_run == RUN2): raise Exception("rgv has something to clean or cannot do it")
         if cnc.possible_run == RUN2 and self.rgv.has != HALF_FINISHED: cnc.status = IDLE  # if not has a HALF_FINISHED, just get the FINISHED one
@@ -123,6 +134,10 @@ class Simulator:
         feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
         self.log.append("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
+        if random.random() < self.err_rate:
+            cnc.status = BROKEN
+            cnc.broketime = random.randint(600, 1201)  # from 10min to 20min
+            self.log[-1] += ", but then broke :("
         if self.verbose: print(self.log[-1])
         self.rgv.has = got
         self.time += deltaT
@@ -150,6 +165,7 @@ class Simulator:
             elif self.cnc[idx-1].status == RUN: st = "r "
             elif self.cnc[idx-1].status == RUN1: st = "1 "
             elif self.cnc[idx-1].status == RUN2: st = "2 "
+            elif self.cnc[idx-1].status == BROKEN: st = "x "
             else: raise Exception("status unknown")
             return st
         for idx in [2, 4, 6, 8]: s += addstatus(idx)  # upper CNCs
