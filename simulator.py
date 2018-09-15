@@ -60,7 +60,7 @@ HALF_FINISHED = 2
 
 # finish time
 FINISH_IDLE = -1
-FINISH_INF = -2
+FINISH_INF = 28801
 
 class Parameter1:
     mov = [0, 20, 33, 46]
@@ -142,7 +142,7 @@ class Simulator:
         feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
         self.private__log("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
-        if random.random() < self.err_rate:
+        if cnc.status != IDLE and random.random() < self.err_rate:
             cnc.breakat = random.randint(0, cnc.private__runtime())
             cnc.broketime = random.randint(600, 1201)  # from 10min to 20min
         else: cnc.breakat = -1
