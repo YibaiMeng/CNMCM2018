@@ -58,6 +58,10 @@ NOTHING = 0
 FINISHED = 1
 HALF_FINISHED = 2
 
+# finish time
+FINISH_IDLE = -1
+FINISH_INF = -2
+
 class Parameter1:
     mov = [0, 20, 33, 46]
     run = [560, 400, 378]
@@ -82,15 +86,20 @@ class CNC:
         self.start = -1
         self.parameter = parameter
         self.possible_run = possible_run
+        self.breakat = -1  # break after run, second, if -1, never break
         self.broketime = 0  # random broken time
     
     def finish_time(self):
-        if self.status == IDLE: return -1
-        if self.status == RUN: return self.start + self.parameter.run[0]
-        if self.status == RUN1: return self.start + self.parameter.run[1]
-        if self.status == RUN2: return self.start + self.parameter.run[2]
-        if self.status == BROKEN: return self.start + self.broketime
-        else: raise Exception("not implemented")
+        if self.status == IDLE: return FINISH_IDLE
+        if self.status in (RUN, RUN1, RUN2): return self.start + self.private__runtime()
+        if self.status == BROKEN: return FINISH_INF
+        raise Exception("not implemented")
+    
+    def private__runtime(self):
+        if self.status == RUN: return self.parameter.run[0]
+        if self.status == RUN1: return self.parameter.run[1]
+        if self.status == RUN2: return self.parameter.run[2]
+        raise Exception("not in run state")
 
 class RGV:
     def __init__(self, parameter):
@@ -116,9 +125,8 @@ class Simulator:
         distance = abs(lastpos - position)
         deltaT = self.parameter.mov[distance]
         self.rgv.position = position
-        self.log.append("%d+%d: rgv move from %d to %d" % (self.time, deltaT, lastpos, position))
-        if self.verbose: print(self.log[-1])
-        self.time += deltaT  # check by default, if out of range, raise exception
+        self.private__log("%d+%d: rgv move from %d to %d" % (self.time, deltaT, lastpos, position))
+        self += deltaT  # check by default, if out of range, raise exception
     
     def feed(self, idx):
         pos = (idx-1) // 2
@@ -133,29 +141,26 @@ class Simulator:
         deltaT = self.parameter.rgv[(idx-1) % 2]
         feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
-        self.log.append("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
+        self.private__log("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
         if random.random() < self.err_rate:
-            cnc.status = BROKEN
+            cnc.breakat = random.randint(0, cnc.private__runtime())
             cnc.broketime = random.randint(600, 1201)  # from 10min to 20min
-            self.log[-1] += ", but then broke :("
-        if self.verbose: print(self.log[-1])
+        else: cnc.breakat = -1
         self.rgv.has = got
-        self.time += deltaT
+        self += deltaT
         cnc.start = self.time
     
     def clean(self):
         if self.rgv.has != FINISHED: raise Exception("nothing to clean or half-finished cannot be cleaned")
         deltaT = self.parameter.clean
-        self.log.append("%d+%d: clean finised work" % (self.time, deltaT))
-        if self.verbose: print(self.log[-1])
+        self.private__log("%d+%d: clean finised work" % (self.time, deltaT))
         self.rgv.has = NOTHING
-        self.time += deltaT
+        self += deltaT
         self.count += 1
     
     def wait(self, deltaT):
-        self.log.append("%d+%d: waiting" % (self.time, deltaT))
-        if self.verbose: print(self.log[-1])
-        self.time += deltaT
+        self.private__log("%d+%d: waiting" % (self.time, deltaT))
+        self += deltaT
 
     def __str__(self):
         s = ""
@@ -182,6 +187,10 @@ class Simulator:
     def copy(self):
         return copy.deepcopy(self)
     
+    def private__log(self, log):
+        self.log.append(log)
+        if self.verbose: print(self.log[-1])
+    
     def save(self, filename="tmp.txt", folder="Data"):  # save current state to a file, with verbose log behind
         with open(os.path.join(folder, filename), 'w') as f:
             f.write("trace for simulation at %s\n" % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
@@ -190,6 +199,21 @@ class Simulator:
             f.write("\n[log]\n")
             for s in self.log:
                 f.write(s + '\n')
+    
+    def __add__ (self, deltaT):
+        self.time += deltaT
+        # refresh state of this time
+        for idx, cnc in enumerate(self.cnc):
+            if cnc.status in (RUN, RUN1, RUN2):
+                if cnc.breakat >= 0:  # this cnc will break at cnc.start + cnc.breakat
+                    if self.time >= cnc.start + cnc.breakat:  # break
+                        self.private__log("---- cnc %d broke at time %d" % (idx+1, cnc.start + cnc.breakat))
+                        cnc.status = BROKEN
+            if cnc.status == BROKEN:
+                if self.time >= cnc.start + cnc.breakat + cnc.broketime:
+                    self.private__log("---- cnc %d fixed at time %d" % (idx+1, cnc.start + cnc.breakat + cnc.broketime))
+                    cnc.status = IDLE  # it has been fixed
+        return self
 
 if __name__ == '__main__':
     main()

@@ -10,7 +10,7 @@ def choose1(parameter):
 
     MAX_TIME = 28801
 
-    s = Simulator(parameter,verbose=True)
+    s = Simulator(parameter,verbose=False)
 
     while s.time < 28800 :
         pos = s.rgv.position
