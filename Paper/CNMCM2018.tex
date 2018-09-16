@@ -44,11 +44,11 @@
 （1）CNC：在上料传送带和下料传送带的两侧各安装4台CNC，等距排列，每台CNC同一时间只能安装1种刀具加工1个物料。
 如果物料的加工过程需要两道工序，则需要有不同的CNC安装不同的刀具分别加工完成，在加工过程中不能更换刀具。第一和第二道工序需要在不同的CNC上依次加工完成，完成时间也不同，每台CNC只能完成其中的一道工序。
 （2）RGV：RGV带有智能控制功能，能够接收和发送指令信号。根据指令能在直线轨道上移动和停止等待，可连续移动1个单位（两台相邻CNC间的距离）、2个单位（三台相邻CNC间的距离）和3个单位（四台相邻CNC间的距离）。RGV同一时间只能执行移动、停止等待、上下料和清洗作业中的一项。
-（3）上料传送带：上料传送带由4段组成，在奇数编号CNC1#、3#、5#、7#前各有1段。由系统传感器控制，只能向一个方向传动，既能连动，也能独立运动。
-（4）下料传送带：下料传送带由4段组成，在偶数编号CNC2#、4#、6#、8#前各有1段。由传感器控制，只能向同一个方向传动，既能连动，也能独立运动。
+（3）上料传送带：上料传送带由4段组成，在奇数编号CNC1\#、3\#、5\#、7\#前各有1段。由系统传感器控制，只能向一个方向传动，既能连动，也能独立运动。
+（4）下料传送带：下料传送带由4段组成，在偶数编号CNC2\#、4\#、6\#、8\#前各有1段。由传感器控制，只能向同一个方向传动，既能连动，也能独立运动。
 
 整个作业流程如下：
-（1）智能加工系统通电启动后，RGV在CNC1#和CNC2#正中间的初始位置，所有CNC都处于空闲状态。
+（1）智能加工系统通电启动后，RGV在CNC1\#和CNC2\#正中间的初始位置，所有CNC都处于空闲状态。
 （2）在工作正常情况下，如果某CNC处于空闲状态，则向RGV发出上料需求信号；否则，CNC处于加工作业状态，在加工作业完成即刻向RGV发出需求信号。
 （3）RGV在收到某CNC的需求信号后，它会自行确定该CNC的上下料作业次序，并依次按顺序为其上下料作业。根据需求指令，RGV运行至需要作业的某CNC处，同时上料传送带将生料送到该CNC正前方，供RGV上料作业。
 RGV为偶数编号CNC一次上下料所需时间要大于为奇数编号CNC一次上下料所需时间。
@@ -107,8 +107,7 @@ RGV为偶数编号CNC一次上下料所需时间要大于为奇数编号CNC一�
 
 \subsection{情况一算法}
 
-如前述，我们先自己实现了一个智能加工系统的模拟器(simulator.py)，可以模拟进行上下料、清洗、RGV移动等各种操作。随后我们先实现了一个贪心算法(choose1.py)。算法的主要思想是我们对8个CNC最早可以开始工作的时间进行排序。对于每个CNC，它最早可以开始工作的时间指的是RGV移动到它之后的时间与他结束自身工作的时间中的较大值，也就是代码中的max(walk_finish,s.Cnc(i).finish_time())。我们取8个CNC中最早可以开始工作的一个，开始工作。如此循环一直到时间结束。我们运行代码并获得了3组参数下该系统的实际调度策略以及系统的作业效率，调度策略在支撑材料中，而作业效率如下表所示。
-
+如前述，我们先自己实现了一个智能加工系统的模拟器(simulator.py)，可以模拟进行上下料、清洗、RGV移动等各种操作。随后我们先实现了一个贪心算法(choose1.py)。算法的主要思想是我们对8个CNC最早可以开始工作的时间进行排序。对于每个CNC，它最早可以开始工作的时间指的是RGV移动到它之后的时间与他结束自身工作的时间中的较大值，也就是代码中的 max(walk\_finish,s.Cnc(i).finish\_time())。我们取8个CNC中最早可以开始工作的一个，开始工作。如此循环一直到时间结束。我们运行代码并获得了3组参数下该系统的实际调度策略以及系统的作业效率，调度策略在支撑材料中，而作业效率如下表所示。
 
 经过对数据的分析可知：{\color{red}{还有啥}}
 
@@ -210,35 +209,19 @@ tabular环境的必选参数由每列对应一个格式字符所组成：c表示
 %附录
 \begin{appendices}
 \section{RGV行为模拟器--Python源代码}
-%\begin{lstlisting}[language=python]
-%\input{../simulator.py}
-%\end{lstlisting}
 \lstinputlisting[language=python]{../simulator.py}
-\section{规划解决程序--lingo源代码}
-\begin{lstlisting}[language=c]
-kk=2;
-[mdd,ndd]=size(dd);
-while ~isempty(V)
-    [tmpd,j]=min(W(i,V));tmpj=V(j);
-for k=2:ndd
-    [tmp1,jj]=min(dd(1,k)+W(dd(2,k),V));
-    tmp2=V(jj);tt(k-1,:)=[tmp1,tmp2,jj];
-end
-    tmp=[tmpd,tmpj,j;tt];[tmp3,tmp4]=min(tmp(:,1));
-if tmp3==tmpd, ss(1:2,kk)=[i;tmp(tmp4,2)];
-else,tmp5=find(ss(:,tmp4)~=0);tmp6=length(tmp5);
-if dd(2,tmp4)==ss(tmp6,tmp4)
-    ss(1:tmp6+1,kk)=[ss(tmp5,tmp4);tmp(tmp4,2)];
-else, ss(1:3,kk)=[i;dd(2,tmp4);tmp(tmp4,2)];
-end;
-end
-    dd=[dd,[tmp3;tmp(tmp4,2)]];V(tmp(tmp4,3))=[];
-    [mdd,ndd]=size(dd);
-    kk=kk+1;
-end;
-S=ss;
-D=dd(1,:);
- \end{lstlisting}
+\section{第一题决策器--Python源代码}
+\lstinputlisting[language=python]{../choose1.py}
+\section{第二题决策器--Python源代码}
+\lstinputlisting[language=python]{../choose2.py}
+\section{第三题(1)决策器--Python源代码}
+\lstinputlisting[language=python]{../choose31.py}
+\section{第三题(2)决策器--Python源代码}
+\lstinputlisting[language=python]{../choose32.py}
+\section{结果生成器--Python源代码}
+\lstinputlisting[language=python]{../write_excel.py}
+
+
 \end{appendices}
 
 \end{document}
