@@ -3,8 +3,8 @@ choose what to do
 '''
 from simulator import *
 
-def main():
-    s = choose1(Parameter1)
+def main(parameter = Parameter1):
+    s = choose1(parameter)
     print(s)
     return s
 

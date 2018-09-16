@@ -13,7 +13,7 @@ def main():
         worksheet.write('B1', '加工CNC编号')
         worksheet.write('C1', '上料开始时间')
         worksheet.write('D1', '下料开始时间')
-        s = choose1.main()
+        s = choose1.main(parameter)
         for r, obj in enumerate(s.finished_objs()):
             worksheet.write('A%d' % (r+2), obj.num)
             worksheet.write('B%d' % (r+2), obj.cnc)
@@ -32,7 +32,7 @@ def main():
         worksheet.write('E1', '工序2的CNC编号')
         worksheet.write('F1', '上料开始时间')
         worksheet.write('G1', '下料开始时间')
-        s = choose2.main()
+        s = choose2.main(parameter)
         for r, obj in enumerate(s.finished_objs()):
             worksheet.write('A%d' % (r+2), obj.num)
             worksheet.write('B%d' % (r+2), obj.cnc)

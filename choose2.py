@@ -3,7 +3,7 @@ choose what to do
 '''
 from simulator import *
 
-def main():
+def main(parameter = Parameter1):
     count = 0
     max_count = 0
     for i1 in range(1,3):
@@ -26,13 +26,13 @@ def main():
                                     Run1.append(6) if i6 == 1 else Run2.append(6)
                                     Run1.append(7) if i7 == 1 else Run2.append(7)
                                     Run1.append(8) if i8 == 1 else Run2.append(8)
-                                    s = choose2(Parameter1,Run1,Run2)
+                                    s = choose2(parameter,Run1,Run2)
                                     if s.count > max_count:
                                         max_count = s.count
                                         max_run1 = Run1
                                         max_run2 = Run2
     print(max_run1,max_run2)
-    s = choose2(Parameter1,max_run1,max_run2)
+    s = choose2(parameter,max_run1,max_run2)
     print(s)
     return s
 
