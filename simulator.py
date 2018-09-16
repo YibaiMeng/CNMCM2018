@@ -229,8 +229,14 @@ class Simulator:
             s += "happened %d errors\n" % len(self.errs)
             for err in sorted(self.errs, key=lambda x: x[2]):
                 s += '  object %d broke at cnc %d, start %d and end %d, broke for %f minite\n' % (err[0], err[1], err[2], err[3], (err[3] - err[2]) / 60)
+        one_running = self.parameter.run[0] if self.private__mode == 0 else (self.parameter.run[1] + self.parameter.run[2])
+        s += 'efficiency is %d*%d/%d = %f%%' % (self.count, one_running, self.time, 100.0 * self.efficiency(self.time))
         return s
     
+    def efficiency(self, time=28800):
+        one_running = self.parameter.run[0] if self.private__mode == 0 else (self.parameter.run[1] + self.parameter.run[2])
+        return self.count * one_running / time
+
     def Cnc(self, idx):
         return self.cnc[idx-1]
     
