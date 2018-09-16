@@ -132,7 +132,10 @@ class Simulator:
         self.count = 0
         self.log = []  # record the verbose output
         self.objs = []  # record finished objects
+        self.errs = []
         self.numidx = 1  # record the index of objects
+        self.verbose_detail = False
+        self.verbose_error = True
 
     def move2(self, position):  # position in [0,1,2,3]
         lastpos = self.rgv.position
@@ -156,9 +159,11 @@ class Simulator:
         feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINISHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
         self.private__log("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
+        will_has_err = False
         if cnc.status != IDLE and random.random() < self.err_rate:
             cnc.breakat = random.randint(0, cnc.private__runtime())
             cnc.broketime = random.randint(600, 1201)  # from 10min to 20min
+            will_has_err = True
         else: cnc.breakat = -1
         lastrgvobj = self.rgv.obj  # save the rgv's object
         self.rgv.has = got
@@ -178,6 +183,8 @@ class Simulator:
             self.rgv.obj.end = self.time
         self += deltaT
         cnc.start = self.time
+        if will_has_err:
+            self.errs.append([cnc.obj.num, idx, cnc.start + cnc.breakat, cnc.start + cnc.breakat + cnc.broketime])
     
     def clean(self):
         if self.rgv.has != FINISHED: raise Exception("nothing to clean or half-finished cannot be cleaned")
@@ -209,14 +216,19 @@ class Simulator:
         s += "".join(["  " for i in range(self.rgv.position)] + ["x\n"])
         for idx in [1, 3, 5, 7]: s += addstatus(idx)  # lower CNCs
         s += "\n"
-        s += "finished %d objects:\n" % self.count
-        for obj in sorted(self.objs, key=lambda x: x.num):
-            st = '% 5d:' % (obj.num)
-            if self.private__mode == 1:
-                st += "cnc(%d) start at% 6d, end at% 6d" % (obj.cnc, obj.start, obj.end)
-            else:
-                st += "cnc(%d) start1 at% 6d, end1 at% 6d, cnc(%d) start2 at% 6d, end2 at% 6d" % (obj.cnc, obj.start, obj.end, obj.cnc2, obj.start2, obj.end2)
-            s += st + '\n'
+        s += "finished %d objects\n" % self.count
+        if self.verbose_detail:
+            for obj in sorted(self.objs, key=lambda x: x.num):
+                st = '% 5d:' % (obj.num)
+                if self.private__mode == 1:
+                    st += "cnc(%d) start at% 6d, end at% 6d" % (obj.cnc, obj.start, obj.end)
+                else:
+                    st += "cnc(%d) start1 at% 6d, end1 at% 6d, cnc(%d) start2 at% 6d, end2 at% 6d" % (obj.cnc, obj.start, obj.end, obj.cnc2, obj.start2, obj.end2)
+                s += st + '\n'
+        if self.verbose_error:
+            s += "happened %d errors\n" % len(self.errs)
+            for err in sorted(self.errs, key=lambda x: x[2]):
+                s += '  object %d broke at cnc %d, start %d and end %d, broke for %f minite\n' % (err[0], err[1], err[2], err[3], (err[3] - err[2]) / 60)
         return s
     
     def Cnc(self, idx):

@@ -3,7 +3,7 @@ choose what to do
 '''
 from simulator import *
 
-def main():
+def main(parameter = Parameter1):
     count = 0
     max_count = 0
     for i1 in range(1,3):
@@ -29,7 +29,7 @@ def main():
 
                                     cnt = 0
                                     for i in range(20):
-                                        s = choose2(Parameter3,Run1,Run2)
+                                        s = choose2(parameter,Run1,Run2)
                                         cnt += s.count
                                     cnt /= 20
                                     if cnt > max_count:
@@ -40,7 +40,9 @@ def main():
 
     print(max_run1,max_run2,max_count)
     print("demo")
-    print(choose2(Parameter3,max_run1,max_run2))
+    s = choose2(parameter,max_run1,max_run2)
+    print(s)
+    return s
 
 
 def choose2(parameter,Run1,Run2):

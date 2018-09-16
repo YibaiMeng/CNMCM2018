@@ -11,6 +11,9 @@ def main():
         cnt += s.count
     print("The average count is ",cnt / 20)
 
+def once(parameter):
+    return choose1(parameter)
+
 def choose1(parameter):
 
     MAX_TIME = 28801
