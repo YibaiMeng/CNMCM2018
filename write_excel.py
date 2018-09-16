@@ -40,7 +40,7 @@ def main():
         w.loop(func)
     
     # solve proble 32
-    if False:
+    if True:
         w = Writer("Case_32_result")
         def func(grp, parameter):
             s = choose32.main(parameter)
@@ -92,6 +92,9 @@ def main():
 class Writer:
     def __init__(self, filename):
         self.workbook = xlsxwriter.Workbook('Problem/%s.xlsx' % filename)
+
+    def __del__(self):
+        self.workbook.close()
     
     def loop(self, func):
         for r, parameter in enumerate((Parameter1, Parameter2, Parameter3)):
