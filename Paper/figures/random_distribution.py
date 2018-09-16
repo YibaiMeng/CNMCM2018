@@ -17,7 +17,7 @@ def main(point = 400, testfor = 1000000, err_rate = 0.01, plotfist = 30):
             if random.random() < err_rate:
                 cnt += 1
         cntcnt[cnt] += 1
-    plt.plot([i/point for i in range(plotfist)], cntcnt[:plotfist])
+    plt.plot([i for i in range(plotfist)], cntcnt[:plotfist])
     plt.show()
 
 if __name__ == '__main__':
