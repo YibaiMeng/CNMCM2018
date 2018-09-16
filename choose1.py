@@ -4,7 +4,9 @@ choose what to do
 from simulator import *
 
 def main():
-    print(choose1(Parameter1))
+    s = choose1(Parameter1)
+    print(s)
+    return s
 
 def choose1(parameter):
 

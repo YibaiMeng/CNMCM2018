@@ -32,7 +32,9 @@ def main():
                                         max_run1 = Run1
                                         max_run2 = Run2
     print(max_run1,max_run2)
-    print(choose2(Parameter1,max_run1,max_run2))
+    s = choose2(Parameter1,max_run1,max_run2)
+    print(s)
+    return s
 
 
 def choose2(parameter,Run1,Run2):

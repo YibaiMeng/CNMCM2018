@@ -80,6 +80,14 @@ class Parameter3:
     rgv = [27, 32]
     clean = 25
 
+class OBJ:
+    def __init__(self, num):
+        self.num = num
+        self.cnc = None
+        self.start = None
+        self.end = None
+        # possible variables are cnc2, start2 and end2
+
 class CNC:
     def __init__(self, possible_run, parameter):  # possible_run is in [RUN, RUN1, RUN2]
         self.status = IDLE
@@ -88,6 +96,7 @@ class CNC:
         self.possible_run = possible_run
         self.breakat = -1  # break after run, second, if -1, never break
         self.broketime = 0  # random broken time
+        self.obj = None
     
     def finish_time(self):
         if self.status == IDLE: return FINISH_IDLE
@@ -106,12 +115,15 @@ class RGV:
         self.parameter = parameter
         self.position = 0
         self.has = NOTHING
+        self.obj = None
 
 class Simulator:
     def __init__(self, parameter, run1=[], run2=[], err_rate=0, verbose=False):
         self.cnc = [CNC(RUN, parameter) for i in range(8)]
         for idx in run1: self.cnc[idx-1].possible_run = RUN1
         for idx in run2: self.cnc[idx-1].possible_run = RUN2
+        if len(run1) == 0 and len(run2) == 0: self.private__mode = 1
+        else: self.private__mode = 2
         self.rgv = RGV(parameter)
         self.time = 0
         self.parameter = parameter
@@ -119,6 +131,8 @@ class Simulator:
         self.verbose = verbose
         self.count = 0
         self.log = []  # record the verbose output
+        self.objs = []  # record finished objects
+        self.numidx = 1  # record the index of objects
 
     def move2(self, position):  # position in [0,1,2,3]
         lastpos = self.rgv.position
@@ -139,14 +153,29 @@ class Simulator:
         if cnc.possible_run == RUN2 and self.rgv.has != HALF_FINISHED: cnc.status = IDLE  # if not has a HALF_FINISHED, just get the FINISHED one
         else: cnc.status = cnc.possible_run  # change the state to run
         deltaT = self.parameter.rgv[(idx-1) % 2]
-        feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINSHED"
+        feedwith = "NEW" if self.rgv.has == NOTHING else "HALF_FINISHED"
         if cnc.possible_run == RUN2 and feedwith == "NEW": feedwith = "NOTHING"  # cannot feed NEW to this machine
         self.private__log("%d+%d: feed %d with %s, and got %s" % (self.time, deltaT, idx, feedwith, gotstr))
         if cnc.status != IDLE and random.random() < self.err_rate:
             cnc.breakat = random.randint(0, cnc.private__runtime())
             cnc.broketime = random.randint(600, 1201)  # from 10min to 20min
         else: cnc.breakat = -1
+        lastrgvobj = self.rgv.obj  # save the rgv's object
         self.rgv.has = got
+        self.rgv.obj = cnc.obj
+        if feedwith == "NEW":
+            cnc.obj = OBJ(self.numidx)
+            cnc.obj.start = self.time  # starting upload
+            cnc.obj.cnc = idx
+            self.numidx += 1
+        elif feedwith == "HALF_FINISHED":
+            cnc.obj = lastrgvobj
+            cnc.obj.start2 = self.time  # starting upload
+            cnc.obj.cnc2 = idx
+        if got == FINISHED and self.private__mode == 2:
+            self.rgv.obj.end2 = self.time
+        elif got != NOTHING:
+            self.rgv.obj.end = self.time
         self += deltaT
         cnc.start = self.time
     
@@ -154,7 +183,9 @@ class Simulator:
         if self.rgv.has != FINISHED: raise Exception("nothing to clean or half-finished cannot be cleaned")
         deltaT = self.parameter.clean
         self.private__log("%d+%d: clean finised work" % (self.time, deltaT))
+        self.objs.append(self.rgv.obj)
         self.rgv.has = NOTHING
+        self.rgv.obj = None
         self += deltaT
         self.count += 1
     
@@ -178,7 +209,14 @@ class Simulator:
         s += "".join(["  " for i in range(self.rgv.position)] + ["x\n"])
         for idx in [1, 3, 5, 7]: s += addstatus(idx)  # lower CNCs
         s += "\n"
-        s += "finished %d objects\n" % self.count
+        s += "finished %d objects:\n" % self.count
+        for obj in sorted(self.objs, key=lambda x: x.num):
+            st = '% 5d:' % (obj.num)
+            if self.private__mode == 1:
+                st += "cnc(%d) start at% 6d, end at% 6d" % (obj.cnc, obj.start, obj.end)
+            else:
+                st += "cnc(%d) start1 at% 6d, end1 at% 6d, cnc(%d) start2 at% 6d, end2 at% 6d" % (obj.cnc, obj.start, obj.end, obj.cnc2, obj.start2, obj.end2)
+            s += st + '\n'
         return s
     
     def Cnc(self, idx):
@@ -214,6 +252,9 @@ class Simulator:
                     self.private__log("---- cnc %d fixed at time %d" % (idx+1, cnc.start + cnc.breakat + cnc.broketime))
                     cnc.status = IDLE  # it has been fixed
         return self
+    
+    def finished_objs(self):
+        return sorted(self.objs, key=lambda x: x.num)
 
 if __name__ == '__main__':
     main()
